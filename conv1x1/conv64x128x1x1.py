@@ -5,8 +5,8 @@ import numpy as np
 INPUT_CHANNELS = 128
 OUTPUT_CHANNELS = 64
 KERNEL_SIZE = 1
-STRIDE = 2
-PADDING = 1
+STRIDE = 1
+PADDING = 0
 HEIGHT = 224
 WIDTH = 224
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     input_tensor = torch.Tensor(input_matrix).reshape(1, INPUT_CHANNELS, HEIGHT, WIDTH)
     print('input shape ',input_tensor.shape) 
 
-    filters_matrix = [(1) for i in range(0, (OUTPUT_CHANNELS*INPUT_CHANNELS*KERNEL_SIZE*KERNEL_SIZE))]
+    filters_matrix = [(i+1) for i in range(0, (OUTPUT_CHANNELS*INPUT_CHANNELS*KERNEL_SIZE*KERNEL_SIZE))]
     filters_tensor = torch.Tensor(filters_matrix).reshape(OUTPUT_CHANNELS,INPUT_CHANNELS,KERNEL_SIZE,KERNEL_SIZE)
     print('weights shape ',filters_tensor.shape)  
 
