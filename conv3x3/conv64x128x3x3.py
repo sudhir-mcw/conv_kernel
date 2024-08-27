@@ -4,7 +4,7 @@ import numpy as np
 
 INPUT_CHANNELS = 128
 OUTPUT_CHANNELS = 64
-KERNEL_SIZE = 1
+KERNEL_SIZE = 3
 STRIDE = 1
 PADDING = 0
 HEIGHT = 224
@@ -43,4 +43,4 @@ if __name__ == "__main__":
 
     output = conv(input_tensor)
     print("output shape ", output.shape)
-    np.save("py_conv64x128x1x1.npy", output.detach().numpy())
+    np.save("py_conv64x128x3x3.npy", output.detach().numpy())

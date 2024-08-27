@@ -7,14 +7,14 @@
 #define HEIGHT 224
 #define WIDTH 224
 #define NUM_FILTERS 64
-#define KERNEL_HEIGHT 1
-#define KERNEL_WIDTH 1
+#define KERNEL_HEIGHT 3
+#define KERNEL_WIDTH 3
 #define STRIDE 1
 #define PADDING 0
 
 using namespace std;
 
-void conv1x1(float *input, float *output, float *filters, float *bias,
+void conv3x3(float *input, float *output, float *filters, float *bias,
              int height, int width, int input_channels, int output_filters,
              int kernel_height, int kernel_width, int stride, int padding) {
   int padded_height = height + 2 * padding;
@@ -70,17 +70,17 @@ void conv1x1(float *input, float *output, float *filters, float *bias,
     }
   }
 
-  cnpy::npy_save("conv64x128x1x1.npy", output,
+  cnpy::npy_save("conv64x128x3x3.npy", output,
                  {1, NUM_FILTERS, (unsigned long)output_height,
                   (unsigned long)output_width},
                  "w");
-  cout << "conv64x128x1x1.npy dumped" << endl;
+  cout << "conv64x128x3x3.npy dumped" << endl;
 }
 
 int main() {
   //  input  : 1x128x224x224 (nchw)
-  //  kernel : 64x128x1x1 (oihw)
-  //  output : 1x64x224x224 [considering stride 1 and padding 0]
+  //  kernel : 64x128x3x3 (oihw)
+  //  output : 1x64x222x222 [considering stride 1 and padding 0]
 
   float *input = new float[CHANNELS * HEIGHT * WIDTH];
   float *filters =
@@ -117,7 +117,7 @@ int main() {
   }
   cout << "Initialization Done" << endl;
 
-  conv1x1(input, output_matrix, filters, bias, HEIGHT, WIDTH, CHANNELS,
+  conv3x3(input, output_matrix, filters, bias, HEIGHT, WIDTH, CHANNELS,
           NUM_FILTERS, KERNEL_HEIGHT, KERNEL_WIDTH, STRIDE, PADDING);
 
   delete[] input;
@@ -129,5 +129,5 @@ int main() {
 }
 
 /*
-    g++ conv64x128x1x1.cc -o conv64x128x1x1  -std=c++11 -lcnpy
+    g++ conv64x128x3x3.cc -o conv64x128x3x3  -std=c++11 -lcnpy
 */
