@@ -5,18 +5,18 @@
 #include <cstdint>
 #include <cstring>
 
-#define CHANNELS 64
+#define CHANNELS 128
 #define HEIGHT 224
 #define WIDTH 224
 #define NUM_FILTERS 64
-#define KERNEL_HEIGHT 3
-#define KERNEL_WIDTH 3
-#define STRIDE 2
+#define KERNEL_HEIGHT 1
+#define KERNEL_WIDTH 1
+#define STRIDE 1
 #define PADDING 1
 
 using namespace std;
 
-void conv3x3(float ***input, float ***output, float ****filters, float *bias,
+void conv1x1(float ***input, float ***output, float ****filters, float *bias,
              int height, int width, int input_channels, int output_filters,
              int kernel_height, int kernel_width, int stride, int padding)
 {
@@ -59,24 +59,16 @@ void conv3x3(float ***input, float ***output, float ****filters, float *bias,
       }
     }
   }
-
-  // Perform convolution
-  for (int f = 0; f < output_filters; f++)
-  {
-    for (int i = 0; i < output_height; i++)
-    {
-      for (int j = 0; j < output_width; j++)
-      {
+  // convolution in nhwc format
+  for(int i=0;i<output_height;i++){
+    for(int j=0;j<output_width;j++){
+      for(int f=0;f<output_filters;f++){
         float sum = bias[f];
-        for (int ch = 0; ch < input_channels; ch++)
-        {
-          for (int k = 0; k < kernel_height; k++)
-          {
-            for (int l = 0; l < kernel_width; l++)
-            {
-              int input_row = i * STRIDE + k;
-              int input_col = j * STRIDE + l;
-              // cout << " "<<ch <<" "<<input_row << " "<<input_row<< " "<< f << " "<<ch<<" "<<k<<" "<<l<<endl;
+        for(int k=0;k<kernel_height;k++){
+          for(int l=0;l<kernel_width;l++){
+            for(int ch=0;ch<input_channels;ch++){
+              int input_row = i*STRIDE+k;
+              int input_col = j*STRIDE+l;
               sum += (padded_input[ch][input_row][input_col]) * (filters[f][ch][k][l]);
             }
           }
@@ -85,6 +77,8 @@ void conv3x3(float ***input, float ***output, float ****filters, float *bias,
       }
     }
   }
+
+
 
   float *flattend_output = new float[output_filters * output_height * output_width];
   int offset = 0;
@@ -97,17 +91,17 @@ void conv3x3(float ***input, float ***output, float ****filters, float *bias,
     }
   }
 
-  cnpy::npy_save("conv64x128x3x3_nchw.npy", flattend_output,
+  cnpy::npy_save("conv64x128x1x1_nhwc.npy", flattend_output,
                  {1, NUM_FILTERS, (unsigned long)output_height,
                   (unsigned long)output_width},
                  "w");
-  std::cout << "conv64x128x3x3_nchw.npy dumped" << endl;
+  std::cout << "conv64x128x1x1_nhwc.npy dumped" << endl;
 }
 
 int main()
 {
   //  input  : 1x128x224x224 (nchw)
-  //  kernel : 64x128x3x3 (oihw)
+  //  kernel : 64x128x1x1 (oihw)
   //  output : 1x64x224x224 [considering stride 1 and padding 0]
 
   float ***input = new float **[CHANNELS];
@@ -180,7 +174,7 @@ int main()
   }
   std::cout << "Initialization Done" << endl;
 
-  conv3x3(input, output_matrix, filters, bias, HEIGHT, WIDTH, CHANNELS,
+  conv1x1(input, output_matrix, filters, bias, HEIGHT, WIDTH, CHANNELS,
           NUM_FILTERS, KERNEL_HEIGHT, KERNEL_WIDTH, STRIDE, PADDING);
 
   for (int i = 0; i < CHANNELS; i++)
@@ -221,5 +215,5 @@ int main()
 }
 
 /*
-    g++ conv64x128x3x3.cc -o conv64x128x3x3  -std=c++11 -lcnpy
+    g++ conv64x128x1x1.cc -o conv64x128x1x1  -std=c++11 -lcnpy
 */

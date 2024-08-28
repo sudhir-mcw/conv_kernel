@@ -12,7 +12,7 @@
 #define KERNEL_HEIGHT 1
 #define KERNEL_WIDTH 1
 #define STRIDE 1
-#define PADDING 0
+#define PADDING 1
 
 using namespace std;
 
@@ -60,22 +60,15 @@ void conv1x1(float ***input, float ***output, float ****filters, float *bias,
     }
   }
 
-  // Perform convolution
-  for (int f = 0; f < output_filters; f++)
-  {
-    for (int i = 0; i < output_height; i++)
-    {
-      for (int j = 0; j < output_width; j++)
-      {
+  for(int i=0;i<output_height;i++){
+    for(int j=0;j<output_width;j++){
+      for(int f=0;f<output_filters;f++){
         float sum = bias[f];
-        for (int ch = 0; ch < input_channels; ch++)
-        {
-          for (int k = 0; k < kernel_height; k++)
-          {
-            for (int l = 0; l < kernel_width; l++)
-            {
-              int input_row = i * STRIDE + k;
-              int input_col = j * STRIDE + l;
+        for(int k=0;k<kernel_height;k++){
+          for(int l=0;l<kernel_width;l++){
+            for(int ch=0;ch<input_channels;ch++){
+              int input_row = i*STRIDE+k;
+              int input_col = j*STRIDE+l;
               sum += (padded_input[ch][input_row][input_col]) * (filters[f][ch][k][l]);
             }
           }
@@ -84,6 +77,8 @@ void conv1x1(float ***input, float ***output, float ****filters, float *bias,
       }
     }
   }
+
+
 
   float *flattend_output = new float[output_filters * output_height * output_width];
   int offset = 0;
@@ -96,11 +91,11 @@ void conv1x1(float ***input, float ***output, float ****filters, float *bias,
     }
   }
 
-  cnpy::npy_save("conv64x128x1x1.npy", flattend_output,
+  cnpy::npy_save("conv64x128x1x1_nchw.npy", flattend_output,
                  {1, NUM_FILTERS, (unsigned long)output_height,
                   (unsigned long)output_width},
                  "w");
-  std::cout << "conv64x128x1x1.npy dumped" << endl;
+  std::cout << "conv64x128x1x1_nchw.npy dumped" << endl;
 }
 
 int main()
