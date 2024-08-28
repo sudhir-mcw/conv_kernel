@@ -2,11 +2,11 @@ from torch import nn
 import torch
 import numpy as np
 
-INPUT_CHANNELS = 128
+INPUT_CHANNELS = 64
 OUTPUT_CHANNELS = 64
 KERNEL_SIZE = 3
-STRIDE = 1
-PADDING = 0
+STRIDE = 2
+PADDING = 1
 HEIGHT = 224
 WIDTH = 224
 
