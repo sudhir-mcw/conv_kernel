@@ -11,8 +11,8 @@
 #define NUM_FILTERS 64
 #define KERNEL_HEIGHT 1
 #define KERNEL_WIDTH 1
-#define STRIDE 2
-#define PADDING 2
+#define STRIDE 1
+#define PADDING 1
 
 using namespace std;
 
@@ -126,7 +126,6 @@ int main() {
     for (int j = 0; j < HEIGHT; j++) {
       for (int k = 0; k < WIDTH; k++) {
         nhwc_input[j][k][i] = (++num);
-        
       }
     }
   }
