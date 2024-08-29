@@ -17,9 +17,8 @@ if __name__ == "__main__":
     input_matrix = [(i + 1) for i in range(0, (1 * CHANNELS * HEIGHT * WIDTH))]
     input_tensor = torch.Tensor(input_matrix).reshape(1, CHANNELS, HEIGHT, WIDTH)
 
-    print("nchw input shape ", input_tensor.shape)
     input_tensor_nhwc = input_tensor.permute(0, 2, 3, 1)  # for nhwc conversion
-    print("nhwc input shape ", input_tensor_nhwc.shape)
+    print("nchw input shape ", input_tensor.shape," nhwc input shape ", input_tensor_nhwc.shape)
     np.save("py_input_nhwc.npy", input_tensor_nhwc.detach().numpy())
 
     weight_matrix = [
@@ -32,9 +31,8 @@ if __name__ == "__main__":
         OUTPUT_CHANNELS, CHANNELS, KERNEL_HEIGHT, KERNEL_WIDTH
     )
 
-    print("nchw weight shape ", weight_tensor.shape)
     weight_tensor_nhwc = weight_tensor.permute(2, 3, 1, 0)  # for nhwc conversion
-    print("nhwc weight shape ", weight_tensor_nhwc.shape)
+    print("nchw weight shape ", weight_tensor.shape," nhwc weight shape ", weight_tensor_nhwc.shape)
     np.save("py_weight_nhwc.npy", weight_tensor_nhwc.detach().numpy())
 
     bias_matrix = [(0) for i in range(0, (1 * OUTPUT_CHANNELS))]
@@ -52,8 +50,7 @@ if __name__ == "__main__":
 
     output_tensor = conv(input_tensor)
 
-    print("nchw output shape ", output_tensor.shape)
     output_tensor_nhwc = output_tensor.permute(0, 2, 3, 1)  # for nhwc conversion
 
-    print("nhwc output shape ", output_tensor_nhwc.shape)
+    print("nchw output shape ", output_tensor.shape," nhwc output shape ", output_tensor_nhwc.shape)
     np.save("py_conv64x128x1x1_nhwc.npy", output_tensor_nhwc.detach().numpy())

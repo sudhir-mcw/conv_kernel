@@ -43,4 +43,4 @@ if __name__ == "__main__":
 
     output = conv(input_tensor)
     print("output shape ", output.shape)
-    np.save("py_conv64x128x1x1.npy", output.detach().numpy())
+    np.save("py_conv64x128x1x1_nchw.npy", output.detach().numpy())

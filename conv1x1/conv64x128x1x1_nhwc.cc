@@ -91,33 +91,14 @@ int main() {
   //  input  : 1x128x224x224 (nchw)
   //  kernel : 64x128x1x1 (oihw)
   //  output : 1x64x224x224 [considering stride 1 and padding 0]
-  // TODO : find a better way to do this, this poor method isjust for quick testing
-  float ***nchw_input = new float **[CHANNELS];
   float ***nhwc_input = new float **[HEIGHT];
-  for (int i = 0; i < CHANNELS; i++) {
-    nchw_input[i] = new float *[HEIGHT];
-    for (int j = 0; j < HEIGHT; j++) {
-      nchw_input[i][j] = new float[WIDTH];
-    }
-  }
   for (int i = 0; i < HEIGHT; i++) {
     nhwc_input[i] = new float *[WIDTH];
     for (int j = 0; j < WIDTH; j++) {
       nhwc_input[i][j] = new float[CHANNELS];
     }
   }
-  // TODO :  find a better way to do this, this poor method isjust for quick testing
-  float ****nchw_filters = new float ***[NUM_FILTERS];
   float ****nhwc_filters = new float ***[KERNEL_HEIGHT];
-  for (int i = 0; i < NUM_FILTERS; i++) {
-    nchw_filters[i] = new float **[CHANNELS];
-    for (int j = 0; j < CHANNELS; j++) {
-      nchw_filters[i][j] = new float *[KERNEL_HEIGHT];
-      for (int k = 0; k < KERNEL_HEIGHT; k++) {
-        nchw_filters[i][j][k] = new float[KERNEL_WIDTH];
-      }
-    }
-  }
   for (int i = 0; i < KERNEL_HEIGHT; i++) {
     nhwc_filters[i] = new float **[KERNEL_WIDTH];
     for (int j = 0; j < KERNEL_WIDTH; j++) {
@@ -144,14 +125,8 @@ int main() {
   for (int i = 0; i < CHANNELS; i++) {
     for (int j = 0; j < HEIGHT; j++) {
       for (int k = 0; k < WIDTH; k++) {
-        nchw_input[i][j][k] = (++num);
-      }
-    }
-  }
-  for (int i = 0; i < HEIGHT; i++) {
-    for (int j = 0; j < WIDTH; j++) {
-      for (int k = 0; k < CHANNELS; k++) {
-        nhwc_input[i][j][k] = nchw_input[k][i][j];
+        nhwc_input[j][k][i] = (++num);
+        
       }
     }
   }
@@ -161,53 +136,15 @@ int main() {
     for (int ch = 0; ch < CHANNELS; ch++) {
       for (int i = 0; i < KERNEL_HEIGHT; i++) {
         for (int j = 0; j < KERNEL_WIDTH; j++) {
-          nchw_filters[f][ch][i][j] = (++num);
+          nhwc_filters[i][j][ch][f] = (++num);
         }
       }
     }
   }
-  for (int i = 0; i < KERNEL_HEIGHT; i++) {
-    for (int j = 0; j < KERNEL_WIDTH; j++) {
-      for (int k = 0; k < CHANNELS; k++) {
-        for (int f = 0; f < NUM_FILTERS; f++) {
-          nhwc_filters[i][j][k][f] = nchw_filters[f][k][i][j];
-        }
-      }
-    }
-  }
-
   for (int i = 0; i < NUM_FILTERS; i++) {
     bias[i] = 0;
   }
   std::cout << "Initialization Done" << endl;
-
-  // flatten and dump output
-  float *flatten_input = new float[HEIGHT * WIDTH * CHANNELS];
-  int offset = 0;
-  for (int i = 0; i < HEIGHT; i++) {
-    for (int j = 0; j < WIDTH; j++) {
-      std::memcpy(flatten_input + offset, nhwc_input[i][j],
-                  sizeof(float) * CHANNELS);
-      offset += CHANNELS;
-    }
-  }
-
-  cnpy::npy_save("cpp_nhwc_input.npy", flatten_input,
-                 {1, HEIGHT, WIDTH, CHANNELS}, "w");
-
-  offset = 0;
-  float *flatten_weight = new float[HEIGHT * WIDTH * CHANNELS * NUM_FILTERS];
-  for (int i = 0; i < KERNEL_HEIGHT; i++) {
-    for (int j = 0; j < KERNEL_WIDTH; j++) {
-      for (int k = 0; k < CHANNELS; k++) {
-        std::memcpy(flatten_weight + offset, nhwc_filters[i][j][k],
-                    sizeof(float) * NUM_FILTERS);
-        offset += NUM_FILTERS;
-      }
-    }
-  }
-  cnpy::npy_save("cpp_hwio_weight.npy", flatten_weight,
-                 {KERNEL_HEIGHT, KERNEL_WIDTH, CHANNELS, NUM_FILTERS}, "w");
   conv1x1(nhwc_input, output_matrix, nhwc_filters, bias, HEIGHT, WIDTH,
           CHANNELS, NUM_FILTERS, KERNEL_HEIGHT, KERNEL_WIDTH, STRIDE, PADDING);
 
