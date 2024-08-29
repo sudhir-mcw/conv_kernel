@@ -1,9 +1,9 @@
 #include <cnpy.h>
 
-#include <fstream>
-#include <iostream>
 #include <cstdint>
 #include <cstring>
+#include <fstream>
+#include <iostream>
 
 #define CHANNELS 128
 #define HEIGHT 224
@@ -11,119 +11,100 @@
 #define NUM_FILTERS 64
 #define KERNEL_HEIGHT 1
 #define KERNEL_WIDTH 1
-#define STRIDE 1
-#define PADDING 1
+#define STRIDE 2
+#define PADDING 2
 
 using namespace std;
 
-void conv1x1(float ***input, float ***output, float ****filters, float *bias,
-             int height, int width, int input_channels, int output_filters,
-             int kernel_height, int kernel_width, int stride, int padding)
-{
+void conv1x1(float ***input_nhwc, float ***output_nhwc, float ****filters,
+             float *bias, int height, int width, int input_channels,
+             int output_filters, int kernel_height, int kernel_width,
+             int stride, int padding) {
   int padded_height = height + 2 * padding;
   int padded_width = width + 2 * padding;
-  int output_height = (height + 2 * padding - kernel_height) / STRIDE + 1;
-  int output_width = (width + 2 * padding - kernel_width) / STRIDE + 1;
+  int output_height = ((height + 2 * padding - kernel_height) / stride) + 1;
+  int output_width = ((width + 2 * padding - kernel_width) / stride) + 1;
 
-  std::cout << "padded_height: " << padded_height
-            << " padded_width: " << padded_width << endl;
-  std::cout << "output_height: " << output_height
-            << " output_width: " << output_width << endl;
-
-  float ***padded_input = new float **[input_channels];
-  for (int i = 0; i < input_channels; i++)
-  {
-    padded_input[i] = new float *[padded_height];
-    for (int j = 0; j < padded_height; j++)
-    {
-      padded_input[i][j] = new float[padded_width];
+  float ***padded_input_nhwc = new float **[padded_height];
+  for (int i = 0; i < padded_height; i++) {
+    padded_input_nhwc[i] = new float *[padded_width];
+    for (int j = 0; j < padded_width; j++) {
+      padded_input_nhwc[i][j] = new float[input_channels];
     }
   }
+  for (int i = 0; i < padded_height; i++) {
+    for (int j = 0; j < padded_width; j++) {
+      for (int ch = 0; ch < input_channels; ch++) {
+        if (i < padding || i >= padded_height - padding || j < padding ||
+            j >= padded_width - padding) {
+          padded_input_nhwc[i][j][ch] = 0;
 
-  // pad the input if PADDING is not 0
-  for (int i = 0; i < input_channels; i++)
-  {
-    for (int j = 0; j < padded_height; j++)
-    {
-      for (int k = 0; k < padded_width; k++)
-      {
-        if (j < padding || j >= padded_height - padding || k < padding ||
-            k >= padded_width - padding)
-        {
-          padded_input[i][j][k] = 0;
-        }
-        else
-        {
-          padded_input[i][j][k] = input[i][j - padding][k - padding];
+        } else {
+          padded_input_nhwc[i][j][ch] =
+              input_nhwc[i - padding][j - padding][ch];
         }
       }
     }
   }
-  // convolution in nhwc format
-  for(int i=0;i<output_height;i++){
-    for(int j=0;j<output_width;j++){
-      for(int f=0;f<output_filters;f++){
-        float sum = bias[f];
-        for(int k=0;k<kernel_height;k++){
-          for(int l=0;l<kernel_width;l++){
-            for(int ch=0;ch<input_channels;ch++){
-              int input_row = i*STRIDE+k;
-              int input_col = j*STRIDE+l;
-              sum += (padded_input[ch][input_row][input_col]) * (filters[f][ch][k][l]);
+  cout << "padding done" << endl;
+
+  for (int i = 0; i < output_height; i++) {
+    for (int j = 0; j < output_width; j++) {
+      for (int k = 0; k < output_filters; k++) {
+        output_nhwc[i][j][k] = bias[k];
+        for (int l = 0; l < kernel_height; l++) {
+          for (int m = 0; m < kernel_width; m++) {
+            for (int ch = 0; ch < input_channels; ch++) {
+              int input_row = i * STRIDE + l;
+              int input_col = j * STRIDE + m;
+              output_nhwc[i][j][k] +=
+                  (padded_input_nhwc[input_row][input_col][ch]) *
+                  (filters[l][m][ch][k]);
             }
           }
         }
-        output[f][i][j] = sum;
       }
     }
   }
+  cout << "conv1x1 done : [" << "1," << output_height << "," << output_width
+       << "," << output_filters << "]" << endl;
 
-
-
-  float *flattend_output = new float[output_filters * output_height * output_width];
+  float *flattend_output =
+      new float[output_height * output_width * output_filters];
   int offset = 0;
-  for (int i = 0; i < output_filters; i++)
-  {
-    for (int j = 0; j < output_height; j++)
-    {
-      std::memcpy(flattend_output + offset, output[i][j], sizeof(float) * output_width);
-      offset += output_width;
+  for (int i = 0; i < output_height; i++) {
+    for (int j = 0; j < output_width; j++) {
+      std::memcpy(flattend_output + offset, output_nhwc[i][j],
+                  sizeof(float) * output_filters);
+      offset += output_filters;
     }
   }
 
   cnpy::npy_save("conv64x128x1x1_nhwc.npy", flattend_output,
-                 {1, NUM_FILTERS, (unsigned long)output_height,
-                  (unsigned long)output_width},
+                 {1, (unsigned long)output_height, (unsigned long)output_width,
+                  NUM_FILTERS},
                  "w");
-  std::cout << "conv64x128x1x1_nhwc.npy dumped" << endl;
+  std::cout << "conv64x128x1x1_nchw.npy dumped" << endl;
 }
 
-int main()
-{
+int main() {
   //  input  : 1x128x224x224 (nchw)
   //  kernel : 64x128x1x1 (oihw)
   //  output : 1x64x224x224 [considering stride 1 and padding 0]
-
-  float ***input = new float **[CHANNELS];
-  for (int i = 0; i < CHANNELS; i++)
-  {
-    input[i] = new float *[HEIGHT];
-    for (int j = 0; j < HEIGHT; j++)
-    {
-      input[i][j] = new float[WIDTH];
+  float ***nhwc_input = new float **[HEIGHT];
+  for (int i = 0; i < HEIGHT; i++) {
+    nhwc_input[i] = new float *[WIDTH];
+    for (int j = 0; j < WIDTH; j++) {
+      nhwc_input[i][j] = new float[CHANNELS];
     }
   }
-
-  float ****filters = new float ***[NUM_FILTERS];
-  for (int i = 0; i < NUM_FILTERS; i++)
-  {
-    filters[i] = new float **[CHANNELS];
-    for (int j = 0; j < CHANNELS; j++)
-    {
-      filters[i][j] = new float *[KERNEL_HEIGHT];
-      for (int k = 0; k < KERNEL_HEIGHT; k++)
-      {
-        filters[i][j][k] = new float[KERNEL_WIDTH];
+  float ****nhwc_filters = new float ***[KERNEL_HEIGHT];
+  for (int i = 0; i < KERNEL_HEIGHT; i++) {
+    nhwc_filters[i] = new float **[KERNEL_WIDTH];
+    for (int j = 0; j < KERNEL_WIDTH; j++) {
+      nhwc_filters[i][j] = new float *[CHANNELS];
+      for (int k = 0; k < CHANNELS; k++) {
+        nhwc_filters[i][j][k] = new float[NUM_FILTERS];
       }
     }
   }
@@ -132,84 +113,40 @@ int main()
   // compute output size
   int output_height = (HEIGHT + 2 * PADDING - KERNEL_HEIGHT) / STRIDE + 1;
   int output_width = (WIDTH + 2 * PADDING - KERNEL_WIDTH) / STRIDE + 1;
-  float ***output_matrix = new float **[NUM_FILTERS];
-  for (int i = 0; i < NUM_FILTERS; i++)
-  {
-    output_matrix[i] = new float *[output_height];
-    for (int j = 0; j < output_height; j++)
-    {
-      output_matrix[i][j] = new float[output_width];
+  float ***output_matrix = new float **[output_height];
+  for (int i = 0; i < output_height; i++) {
+    output_matrix[i] = new float *[output_width];
+    for (int j = 0; j < output_width; j++) {
+      output_matrix[i][j] = new float[NUM_FILTERS];
     }
   }
 
   int num = 0;
-  for (int i = 0; i < CHANNELS; i++)
-  {
-    for (int j = 0; j < HEIGHT; j++)
-    {
-      for (int k = 0; k < WIDTH; k++)
-      {
-        input[i][j][k] = (++num);
+  for (int i = 0; i < CHANNELS; i++) {
+    for (int j = 0; j < HEIGHT; j++) {
+      for (int k = 0; k < WIDTH; k++) {
+        nhwc_input[j][k][i] = (++num);
+        
       }
     }
   }
   num = 0;
   // Fill weights with 1 and biases with 0
-  for (int f = 0; f < NUM_FILTERS; f++)
-  {
-    for (int ch = 0; ch < CHANNELS; ch++)
-    {
-      for (int i = 0; i < KERNEL_HEIGHT; i++)
-      {
-        for (int j = 0; j < KERNEL_WIDTH; j++)
-        {
-          filters[f][ch][i][j] = (++num);
+  for (int f = 0; f < NUM_FILTERS; f++) {
+    for (int ch = 0; ch < CHANNELS; ch++) {
+      for (int i = 0; i < KERNEL_HEIGHT; i++) {
+        for (int j = 0; j < KERNEL_WIDTH; j++) {
+          nhwc_filters[i][j][ch][f] = (++num);
         }
       }
     }
   }
-  for (int i = 0; i < NUM_FILTERS; i++)
-  {
+  for (int i = 0; i < NUM_FILTERS; i++) {
     bias[i] = 0;
   }
   std::cout << "Initialization Done" << endl;
-
-  conv1x1(input, output_matrix, filters, bias, HEIGHT, WIDTH, CHANNELS,
-          NUM_FILTERS, KERNEL_HEIGHT, KERNEL_WIDTH, STRIDE, PADDING);
-
-  for (int i = 0; i < CHANNELS; i++)
-  {
-    for (int j = 0; j < HEIGHT; j++)
-    {
-      delete[] input[i][j];
-    }
-    delete[] input[i];
-  }
-  for (int i = 0; i < NUM_FILTERS; i++)
-  {
-    for (int j = 0; j < CHANNELS; j++)
-    {
-      for (int k = 0; k < KERNEL_HEIGHT; k++)
-      {
-        delete[] filters[i][j][k];
-      }
-      delete[] filters[i][j];
-    }
-    delete[] filters[i];
-  }
-  for (int i = 0; i < NUM_FILTERS; i++)
-  {
-    for (int j = 0; j < output_height; j++)
-    {
-      delete[] output_matrix[i][j];
-    }
-    delete[] output_matrix[i];
-  }
-
-  delete[] input;
-  delete[] filters;
-  delete[] bias;
-  delete[] output_matrix;
+  conv1x1(nhwc_input, output_matrix, nhwc_filters, bias, HEIGHT, WIDTH,
+          CHANNELS, NUM_FILTERS, KERNEL_HEIGHT, KERNEL_WIDTH, STRIDE, PADDING);
 
   return 0;
 }
