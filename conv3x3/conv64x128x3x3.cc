@@ -76,7 +76,6 @@ void conv3x3(float ***input, float ***output, float ****filters, float *bias,
             {
               int input_row = i * STRIDE + k;
               int input_col = j * STRIDE + l;
-              // cout << " "<<ch <<" "<<input_row << " "<<input_row<< " "<< f << " "<<ch<<" "<<k<<" "<<l<<endl;
               sum += (padded_input[ch][input_row][input_col]) * (filters[f][ch][k][l]);
             }
           }

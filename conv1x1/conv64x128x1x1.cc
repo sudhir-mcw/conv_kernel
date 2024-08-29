@@ -60,15 +60,22 @@ void conv1x1(float ***input, float ***output, float ****filters, float *bias,
     }
   }
 
-  for(int i=0;i<output_height;i++){
-    for(int j=0;j<output_width;j++){
-      for(int f=0;f<output_filters;f++){
+  // Perform convolution
+  for (int f = 0; f < output_filters; f++)
+  {
+    for (int i = 0; i < output_height; i++)
+    {
+      for (int j = 0; j < output_width; j++)
+      {
         float sum = bias[f];
-        for(int k=0;k<kernel_height;k++){
-          for(int l=0;l<kernel_width;l++){
-            for(int ch=0;ch<input_channels;ch++){
-              int input_row = i*STRIDE+k;
-              int input_col = j*STRIDE+l;
+        for (int ch = 0; ch < input_channels; ch++)
+        {
+          for (int k = 0; k < kernel_height; k++)
+          {
+            for (int l = 0; l < kernel_width; l++)
+            {
+              int input_row = i * STRIDE + k;
+              int input_col = j * STRIDE + l;
               sum += (padded_input[ch][input_row][input_col]) * (filters[f][ch][k][l]);
             }
           }
