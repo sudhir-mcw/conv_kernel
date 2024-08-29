@@ -10,7 +10,7 @@ KERNEL_HEIGHT = 3
 KERNEL_WIDTH = 3
 OUTPUT_CHANNELS = 64
 STRIDE = 2
-PADDING = 2
+PADDING = 1
 
 if __name__ == "__main__":
 

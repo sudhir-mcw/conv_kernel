@@ -12,7 +12,7 @@
 #define KERNEL_HEIGHT 3
 #define KERNEL_WIDTH 3
 #define STRIDE 2
-#define PADDING 2
+#define PADDING 1
 
 using namespace std;
 
@@ -85,12 +85,16 @@ void conv3x3(float ***input_nhwc, float ***output_nhwc, float ****filters,
                   NUM_FILTERS},
                  "w");
   std::cout << "conv64x128x3x3_nhwc.npy dumped" << endl;
+  // free padded_input
+  for (int i = 0; i < padded_height; i++) {
+    for (int j = 0; j < padded_width; j++) {
+      delete[] padded_input_nhwc[i][j];
+    }
+    delete[] padded_input_nhwc[i];
+  }
 }
 
 int main() {
-  //  input  : 3x328x224x224 (nchw)
-  //  kernel : 64x128x3x3 (oihw)
-  //  output : 1x64x224x224 [considering stride 1 and padding 0]
   float ***nhwc_input = new float **[HEIGHT];
   for (int i = 0; i < HEIGHT; i++) {
     nhwc_input[i] = new float *[WIDTH];
@@ -135,7 +139,7 @@ int main() {
     for (int ch = 0; ch < CHANNELS; ch++) {
       for (int i = 0; i < KERNEL_HEIGHT; i++) {
         for (int j = 0; j < KERNEL_WIDTH; j++) {
-          nhwc_filters[i][j][ch][f]= (++num);
+          nhwc_filters[i][j][ch][f] = (++num);
         }
       }
     }
@@ -146,6 +150,33 @@ int main() {
   std::cout << "Initialization Done" << endl;
   conv3x3(nhwc_input, output_matrix, nhwc_filters, bias, HEIGHT, WIDTH,
           CHANNELS, NUM_FILTERS, KERNEL_HEIGHT, KERNEL_WIDTH, STRIDE, PADDING);
+
+  for (int i = 0; i < HEIGHT; i++) {
+    for (int j = 0; j < WIDTH; j++) {
+      delete[] nhwc_input[i][j];
+    }
+    delete[] nhwc_input[i];
+  }
+  for (int i = 0; i < KERNEL_HEIGHT; i++) {
+    for (int j = 0; j < KERNEL_WIDTH; j++) {
+      for (int k = 0; k < CHANNELS; k++) {
+        delete[] nhwc_filters[i][j][k];
+      }
+      delete[] nhwc_filters[i][j];
+    }
+    delete[] nhwc_filters[i];
+  }
+  for (int i = 0; i < output_height; i++) {
+    for (int j = 0; j < output_width; j++) {
+      delete[] output_matrix[i][j];
+    }
+    delete[] output_matrix[i];
+  }
+
+  delete[] nhwc_input;
+  delete[] nhwc_filters;
+  delete[] bias;
+  delete[] output_matrix;
 
   return 0;
 }

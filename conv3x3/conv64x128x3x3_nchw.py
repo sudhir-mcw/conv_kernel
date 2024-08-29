@@ -4,7 +4,8 @@ import numpy as np
 
 INPUT_CHANNELS = 64
 OUTPUT_CHANNELS = 64
-KERNEL_SIZE = 3
+KERNEL_HEIGHT = 3
+KERNEL_WIDTH = 3
 STRIDE = 2
 PADDING = 1
 HEIGHT = 224
@@ -15,7 +16,7 @@ if __name__ == "__main__":
     conv = nn.Conv2d(
         OUTPUT_CHANNELS,
         INPUT_CHANNELS,
-        kernel_size=(KERNEL_SIZE, KERNEL_SIZE),
+        kernel_size=(KERNEL_HEIGHT, KERNEL_WIDTH),
         stride=STRIDE,
         padding=PADDING,
     )
@@ -27,11 +28,11 @@ if __name__ == "__main__":
     filters_matrix = [
         (i + 1)
         for i in range(
-            0, (OUTPUT_CHANNELS * INPUT_CHANNELS * KERNEL_SIZE * KERNEL_SIZE)
+            0, (OUTPUT_CHANNELS * INPUT_CHANNELS * KERNEL_HEIGHT * KERNEL_WIDTH)
         )
     ]
     filters_tensor = torch.Tensor(filters_matrix).reshape(
-        OUTPUT_CHANNELS, INPUT_CHANNELS, KERNEL_SIZE, KERNEL_SIZE
+        OUTPUT_CHANNELS, INPUT_CHANNELS, KERNEL_HEIGHT, KERNEL_WIDTH
     )
     print("weights shape ", filters_tensor.shape)
 
